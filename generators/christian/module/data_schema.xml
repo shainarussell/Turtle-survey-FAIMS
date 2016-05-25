@@ -1,63 +1,152 @@
 <?xml version="1.0"?>
 <dataSchema>
-  <ArchaeologicalElement name="Tabgroup">
+  <RelationshipElement name="Site - Turtle" type="hierarchical">
+    <description>A 1-to-n relationship between the parent and its children, respectively.</description>
+    <parent>Parent Of</parent>
+    <child>Child Of</child>
+  </RelationshipElement>
+  <RelationshipElement name="Turtle - Capture" type="hierarchical">
+    <description>A 1-to-n relationship between the parent and its children, respectively.</description>
+    <parent>Parent Of</parent>
+    <child>Child Of</child>
+  </RelationshipElement>
+  <ArchaeologicalElement name="Site">
     <description/>
-    <property name="Dummy" isIdentifier="true" type="measure">
-      <description/>
-      <formatString><![CDATA[{{if $1 then "$1 " else "$2 "}}]]></formatString>
+    <property name="Title" isIdentifier="true" type="measure">
+      <description>Name of the site</description>
+      <formatString><![CDATA[{{if $1 then $1}}{{if and($1, $2) then " " }}{{if $2 then $2}}{{if $3 then " ($3)"}}{{if between($4,0,0.49) then "??" elsif lessThan($4,1) then "?" }}]]></formatString>
       <appendCharacterString><![CDATA[ - ]]></appendCharacterString>
     </property>
-    <property name="Dropdown" type="vocab">
+    <property name="Radius of Site" type="measure">
+      <description>In Meters from the centre gps point</description>
+      <formatString><![CDATA[{{if $1 then $1}}{{if and($1, $2) then " " }}{{if $2 then $2}}{{if $3 then " ($3)"}}{{if between($4,0,0.49) then "??" elsif lessThan($4,1) then "?" }}]]></formatString>
+      <appendCharacterString><![CDATA[ - ]]></appendCharacterString>
+    </property>
+    <property name="Latitude" type="measure">
       <description/>
+    </property>
+    <property name="Longitude" type="measure">
+      <description/>
+    </property>
+    <property name="Northing" type="measure">
+      <description/>
+    </property>
+    <property name="Easting" type="measure">
+      <description/>
+    </property>
+  </ArchaeologicalElement>
+  <ArchaeologicalElement name="Turtle">
+    <description/>
+    <property name="Turtle Markings" isIdentifier="true" type="measure">
+      <description>Narkings of turtle</description>
+      <formatString><![CDATA[{{if $1 then $1}}{{if and($1, $2) then " " }}{{if $2 then $2}}{{if $3 then " ($3)"}}{{if between($4,0,0.49) then "??" elsif lessThan($4,1) then "?" }}]]></formatString>
+      <appendCharacterString><![CDATA[ - ]]></appendCharacterString>
+    </property>
+    <property name="Did you give turtle a marking" type="vocab">
+      <description/>
+      <formatString><![CDATA[{{if $1 then $1}}{{if and($1, $2) then " " }}{{if $2 then $2}}{{if $3 then " ($3)"}}{{if between($4,0,0.49) then "??" elsif lessThan($4,1) then "?" }}]]></formatString>
+      <appendCharacterString><![CDATA[ - ]]></appendCharacterString>
       <lookup>
-        <term>{test_opt1}
+        <term>{Yes}
 <description/></term>
-        <term>{test_opt2}
-<description/></term>
-        <term>{test_opt10}
-<description/></term>
-        <term>{test_opt20}
+        <term>{No}
 <description/></term>
       </lookup>
     </property>
-    <property name="List" type="vocab">
+    <property name="Take Carapace Marking photo" type="file" file="true" thumbnail="true">
       <description/>
+      <formatString><![CDATA[{{if $1 then $1}}{{if and($1, $2) then " " }}{{if $2 then $2}}{{if $3 then " ($3)"}}{{if between($4,0,0.49) then "??" elsif lessThan($4,1) then "?" }}]]></formatString>
+      <appendCharacterString><![CDATA[ - ]]></appendCharacterString>
+    </property>
+    <property name="Species" type="vocab">
+      <description/>
+      <formatString><![CDATA[{{if $1 then $1}}{{if and($1, $2) then " " }}{{if $2 then $2}}{{if $3 then " ($3)"}}{{if between($4,0,0.49) then "??" elsif lessThan($4,1) then "?" }}]]></formatString>
+      <appendCharacterString><![CDATA[ - ]]></appendCharacterString>
       <lookup>
-        <term>{test_opt1}
+        <term>{Long_neck}
+<description/><term>{Chelodina_rugosa_oblonga}
+<description/></term><term>{Chelodina_canni}
+<description/></term><term>{Chelodina_novaeguinea}
+<description/></term></term>
+        <term>{Short_neck}
+<description/><term>{Elseya_dentata}
+<description/></term><term>{Elseya_lavarackerum}
+<description/></term></term>
+      </lookup>
+    </property>
+    <property name="Turtle measurement Carapace Length" type="measure">
+      <description>Measurement in mm</description>
+      <formatString><![CDATA[{{if $1 then $1}}{{if and($1, $2) then " " }}{{if $2 then $2}}{{if $3 then " ($3)"}}{{if between($4,0,0.49) then "??" elsif lessThan($4,1) then "?" }}]]></formatString>
+      <appendCharacterString><![CDATA[ - ]]></appendCharacterString>
+    </property>
+    <property name="Turtle measurement Carapace Width" type="measure">
+      <description/>
+      <formatString><![CDATA[{{if $1 then $1}}{{if and($1, $2) then " " }}{{if $2 then $2}}{{if $3 then " ($3)"}}{{if between($4,0,0.49) then "??" elsif lessThan($4,1) then "?" }}]]></formatString>
+      <appendCharacterString><![CDATA[ - ]]></appendCharacterString>
+    </property>
+    <property name="Turtle measurement Plastron Length" type="measure">
+      <description/>
+      <formatString><![CDATA[{{if $1 then $1}}{{if and($1, $2) then " " }}{{if $2 then $2}}{{if $3 then " ($3)"}}{{if between($4,0,0.49) then "??" elsif lessThan($4,1) then "?" }}]]></formatString>
+      <appendCharacterString><![CDATA[ - ]]></appendCharacterString>
+    </property>
+    <property name="Turtle measurement Plastron Width" type="measure">
+      <description/>
+      <formatString><![CDATA[{{if $1 then $1}}{{if and($1, $2) then " " }}{{if $2 then $2}}{{if $3 then " ($3)"}}{{if between($4,0,0.49) then "??" elsif lessThan($4,1) then "?" }}]]></formatString>
+      <appendCharacterString><![CDATA[ - ]]></appendCharacterString>
+    </property>
+    <property name="Turtle sex" type="vocab">
+      <description/>
+      <formatString><![CDATA[{{if $1 then $1}}{{if and($1, $2) then " " }}{{if $2 then $2}}{{if $3 then " ($3)"}}{{if between($4,0,0.49) then "??" elsif lessThan($4,1) then "?" }}]]></formatString>
+      <appendCharacterString><![CDATA[ - ]]></appendCharacterString>
+      <lookup>
+        <term>{Female}
 <description/></term>
-        <term>{test_opt2}
-<description/></term>
-        <term>{test_opt11}
-<description/></term>
-        <term>{test_opt21}
+        <term>{Male}
 <description/></term>
       </lookup>
     </property>
-    <property name="Picture" type="vocab">
+  </ArchaeologicalElement>
+  <ArchaeologicalElement name="Capture">
+    <description/>
+    <property name="timestamp" isIdentifier="true" type="measure">
       <description/>
+      <formatString><![CDATA[{{if $1 then $1}}{{if and($1, $2) then " " }}{{if $2 then $2}}{{if $3 then " ($3)"}}{{if between($4,0,0.49) then "??" elsif lessThan($4,1) then "?" }}]]></formatString>
+      <appendCharacterString><![CDATA[ - ]]></appendCharacterString>
+    </property>
+    <property name="Trapping Method" type="vocab">
+      <description/>
+      <formatString><![CDATA[{{if $1 then $1}}{{if and($1, $2) then " " }}{{if $2 then $2}}{{if $3 then " ($3)"}}{{if between($4,0,0.49) then "??" elsif lessThan($4,1) then "?" }}]]></formatString>
+      <appendCharacterString><![CDATA[ - ]]></appendCharacterString>
       <lookup>
-        <term>{test_opt1}
+        <term>{Aestivating}
 <description/></term>
-        <term>{test_opt2}
+        <term>{Fishing}
 <description/></term>
-        <term>{test_opt12}
-<description/></term>
-        <term>{test_opt22}
+        <term>{Trap___It_s_a_}
 <description/></term>
       </lookup>
     </property>
-    <property name="Radio" type="vocab">
+    <property name="Take Carapace photo" type="file" file="true" thumbnail="true">
       <description/>
-      <lookup>
-        <term>{test_opt1}
-<description/></term>
-        <term>{test_opt2}
-<description/></term>
-        <term>{test_opt13}
-<description/></term>
-        <term>{test_opt23}
-<description/></term>
-      </lookup>
+      <formatString><![CDATA[{{if $1 then $1}}{{if and($1, $2) then " " }}{{if $2 then $2}}{{if $3 then " ($3)"}}{{if between($4,0,0.49) then "??" elsif lessThan($4,1) then "?" }}]]></formatString>
+      <appendCharacterString><![CDATA[ - ]]></appendCharacterString>
+    </property>
+    <property name="Take Plastrum photo" type="file" file="true" thumbnail="true">
+      <description/>
+      <formatString><![CDATA[{{if $1 then $1}}{{if and($1, $2) then " " }}{{if $2 then $2}}{{if $3 then " ($3)"}}{{if between($4,0,0.49) then "??" elsif lessThan($4,1) then "?" }}]]></formatString>
+      <appendCharacterString><![CDATA[ - ]]></appendCharacterString>
+    </property>
+    <property name="Latitude" type="measure">
+      <description/>
+    </property>
+    <property name="Longitude" type="measure">
+      <description/>
+    </property>
+    <property name="Northing" type="measure">
+      <description/>
+    </property>
+    <property name="Easting" type="measure">
+      <description/>
     </property>
   </ArchaeologicalElement>
 </dataSchema>

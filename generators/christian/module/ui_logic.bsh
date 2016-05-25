@@ -3,6 +3,7 @@ import android.util.Log;
 Object dialog;          // Used to help coordinate the display of a "busy..." dialog
 String parentTabgroup;  // Used to allow entities to be saved as children
 String redirectTab;     // makes newTab work as expected
+String username = "";
 
 setFileSyncEnabled(true);
 setSyncDelay(5.0f);
@@ -29,6 +30,25 @@ makeLocalID(){
 }
 makeLocalID();
 
+insertIntoLocalSettings(String key, String val) {
+  fetchOne("REPLACE INTO localSettings(key, value) VALUES('" + key + "', '" + val + "');");
+}
+
+insertIntoLocalSettings(String key, Integer val) {
+  insertIntoLocalSettings(key, Integer.toString(val));
+}
+
+setFieldValueFromLocalSettings(String key, String ref) {
+  String q = "SELECT value FROM localSettings WHERE key = '" + key + "';";
+  fetchOne(q, new FetchCallback() {
+    onFetch(result) {
+      if (!isNull(result)) {
+        setFieldValue(ref, result.get(0));
+      }
+    }
+  });
+}
+
 newTab(String tab, Boolean resolveTabGroups) {
   if (!resolveTabGroups) {
     return newTab(tab);
@@ -47,8 +67,6 @@ newTab(String tab, Boolean resolveTabGroups) {
     case 2:
       String tabgroupString = path[0];
       String tabString      = path[0] + "/" + path[1];
-
-      showWarning(tabString, tabString);
 
       redirectTab = tabString;
       String onShowTabgroup = "if (!isNull(redirectTab)) { newTab(redirectTab); redirectTab = \"\"; }";
@@ -124,7 +142,10 @@ getDropdownItemValue() {
   return dropdownItemValue;
 }
 
-addOnEvent("Tabgroup/Tab/Dropdown", "click", "dropdownItemValue = getFieldValue(\"Tabgroup/Tab/Dropdown\")");
+addOnEvent("User/User/Select_User", "click", "dropdownItemValue = getFieldValue(\"User/User/Select_User\")");
+addOnEvent("Turtle/Measurement/Species", "click", "dropdownItemValue = getFieldValue(\"Turtle/Measurement/Species\")");
+addOnEvent("Turtle/Measurement/Turtle_sex", "click", "dropdownItemValue = getFieldValue(\"Turtle/Measurement/Turtle_sex\")");
+addOnEvent("Capture/Capture/Trapping_Method", "click", "dropdownItemValue = getFieldValue(\"Capture/Capture/Trapping_Method\")");
 
 /******************************************************************************/
 /*                                 ACTION BAR                                 */
@@ -223,9 +244,10 @@ addActionBarItem("external_gps", new ToggleActionButtonCallback() {
 /******************************************************************************/
 /*                                    GPS                                     */
 /******************************************************************************/
+addOnEvent("Control/Main", "show", "updateGPSDiagnostics()");
 
 updateGPSDiagnostics() {
-  String diagnosticsRef = "";
+  String diagnosticsRef = "Control/Main/GPS_Diagnostics";
   if (diagnosticsRef.equals("")) {
     return;
   }
@@ -291,13 +313,45 @@ updateGPSDiagnostics() {
 /*                                 USER LOGIN                                 */
 /******************************************************************************/
 
-// WARNING: This module is missing a login menu
-String userId    = "1";
-String nameFirst = "";
-String nameLast  = "";
-String email     = "";
-User   user      = new User(userId, nameFirst, nameLast, email);
-setUser(user);
+String userMenuPath = "User/User/Select_User";
+
+populateListForUsers(){
+  String getNonDeletedUsersQuery = "SELECT userid, fname || ' ' || lname "+
+                                   "  FROM user "+
+                                   " WHERE userdeleted is null;";
+
+  fetchAll(getNonDeletedUsersQuery, new FetchCallback() {
+    onFetch(result) {
+      populateDropDown(userMenuPath, result, true);
+    }
+  });
+}
+
+selectUser () {
+  String userVocabId  = getFieldValue(userMenuPath);
+  if (isNull(userVocabId))
+    return;
+
+  String userQ        = "SELECT userid,fname,lname,email FROM user " +
+                        "WHERE  userid='" + userVocabId + "';";
+  FetchCallback callback = new FetchCallback() {
+    onFetch(result) {
+      user = new User(
+            result.get(0),
+            result.get(1),
+            result.get(2),
+            result.get(3)
+      );
+      setUser(user);
+      username = result.get(1) + " " + result.get(2);
+    }
+  };
+
+  fetchOne(userQ, callback);
+}
+
+addOnEvent(userMenuPath, "show",  "populateListForUsers()");
+addOnEvent(userMenuPath, "click", "selectUser()");
 
 
 /******************************************************************************/
@@ -410,10 +464,10 @@ makeVocab(String type, String path, String attrib, List vocabExclusions, String 
       }
     });
 }
-makeVocab("DropDown", "Tabgroup/Tab/Dropdown", "Dropdown");
-makeVocab("List", "Tabgroup/Tab/List", "List");
-makeVocab("PictureGallery", "Tabgroup/Tab/Picture", "Picture");
-makeVocab("RadioGroup", "Tabgroup/Tab/Radio", "Radio");
+makeVocab("RadioGroup", "Turtle/Turtle/Did_you_give_turtle_a_marking", "Did you give turtle a marking");
+makeVocab("HierarchicalDropDown", "Turtle/Measurement/Species", "Species");
+makeVocab("DropDown", "Turtle/Measurement/Turtle_sex", "Turtle sex");
+makeVocab("DropDown", "Capture/Capture/Trapping_Method", "Trapping Method");
 
 
 /******************************************************************************/
@@ -482,6 +536,24 @@ validateFields(List fields, String format) {
   return out;
 }
 
+validateSite() {
+  List f = new ArrayList(); // Fields to be validated
+
+  f.add(fieldPair("Site/Site/Title", "{Title}"));
+
+  String validationMessage = validateFields(f, "PLAINTEXT");
+  showWarning("Validation Results", validationMessage);
+}
+
+validateTurtle() {
+  List f = new ArrayList(); // Fields to be validated
+
+  f.add(fieldPair("Turtle/Turtle/Turtle_Markings", "{Turtle_Markings}"));
+
+  String validationMessage = validateFields(f, "PLAINTEXT");
+  showWarning("Validation Results", validationMessage);
+}
+
 
 
 /******************************************************************************/
@@ -507,12 +579,13 @@ saveTabGroup(String tabgroup, String callback) {
   List    geometry        = null;
   List    attributes      = null;
   String  parentTabgroup_ = parentTabgroup;
+  Boolean userWasSet      = !username.equals("");
 
   parentTabgroup = null;
   SaveCallback saveCallback  = new SaveCallback() {
     onSave(uuid, newRecord) {
       setUuid(tabgroup, uuid);
-      populateAuthorAndTimestamp(tabgroup);
+      // Make a child-parent relationship if need be.
       if (newRecord && !isNull(parentTabgroup_)) {
         String rel = "";
         rel += parentTabgroup_.replaceAll("_", " ");
@@ -527,6 +600,18 @@ saveTabGroup(String tabgroup, String callback) {
           null
         );
       }
+
+      // This fixes an interesting bug. Without this, if a user was not set
+      // (by calling `setUser`) at the time `saveTabGroup` was first called, but
+      // set by the time `onSave` was called, the tab group is saved correctly
+      // the first time only.
+      //
+      // Adding this allows subsequent saves to succeed. Presumably it plays
+      // some role in helping FAIMS associate the correct user with a record.
+      if (!userWasSet) {
+        saveTabGroup(tabgroup);
+      }
+
       execute(callback);
     }
     onError(message) {
@@ -534,49 +619,87 @@ saveTabGroup(String tabgroup, String callback) {
     }
   };
 
-  populateAuthorAndTimestamp(tabgroup);
   saveTabGroup(tabgroup, id, geometry, attributes, saveCallback, enableAutosave);
 }
 
 populateAuthorAndTimestamp(String tabgroup) {
   Map tabgroupToAuthor    = new HashMap();
   Map tabgroupToTimestamp = new HashMap();
+  tabgroupToTimestamp.put("Capture", "Capture/Capture/timestamp");
 
-  String uuid          = getUuid(tabgroup);
   String authorPath    = tabgroupToAuthor.get(tabgroup);
   String timestampPath = tabgroupToTimestamp.get(tabgroup);
-  if (isNull(uuid)) {
-    if (!isNull(authorPath))
-      setFieldValue(authorPath,    "Entity not yet saved");
-    if (!isNull(timestampPath))
-      setFieldValue(timestampPath, "Entity not yet saved");
+
+  fmt     = "yyyy-MM-dd HH:mm:ss z";
+  date    = new Date();
+  dateFmt = new java.text.SimpleDateFormat(fmt);
+  dateStr = dateFmt.format(date);
+
+  String authorVal    = username;
+  String timestampVal = dateStr;
+
+  if (!isNull(authorPath))    setFieldValue(authorPath,    authorVal);
+  if (!isNull(timestampPath)) setFieldValue(timestampPath, timestampVal);
+}
+
+onShowSite () {
+  // TODO: Add some things which should happen when this tabgroup is shown
+  saveTabGroup("Site");
+}
+onShowTurtle () {
+  // TODO: Add some things which should happen when this tabgroup is shown
+  saveTabGroup("Turtle");
+}
+onShowCapture () {
+  // TODO: Add some things which should happen when this tabgroup is shown
+  saveTabGroup("Capture");
+}
+
+addOnEvent("Site", "show", "onShowSite()");
+addOnEvent("Turtle", "show", "onShowTurtle()");
+addOnEvent("Capture", "show", "onShowCapture()");
+
+onClickUserLogin () {
+  // TODO: Add some things which should happen when this element is clicked
+  newTab("Control", true);
+}
+onClickControlRecordNewSite () {
+  // TODO: Add some things which should happen when this element is clicked
+  newSite();
+}
+onClickSiteRecordNewTurtle () {
+  // TODO: Add some things which should happen when this element is clicked
+  String tabgroup = "Site";
+  if (isNull(getUuid(tabgroup))){
+    showToast("{You_must_save_this_tabgroup_first}");
     return;
   }
-
-  String q = "SELECT createdat, createdby " +
-             "  FROM createdmodifiedatby " +
-             " WHERE uuid = '" + uuid + "'";
-  FetchCallback callback = new FetchCallback() {
-    onFetch(result) {
-      if (!isNull(timestampPath))
-        setFieldValue(timestampPath, result.get(0));
-      if (!isNull(authorPath))
-        setFieldValue(authorPath,    result.get(1));
-    }
-  };
-
-  fetchOne(q, callback);
+  parentTabgroup = tabgroup;
+  newTurtle();
+}
+onClickTurtleRecordNewCapture () {
+  // TODO: Add some things which should happen when this element is clicked
+  String tabgroup = "Turtle";
+  if (isNull(getUuid(tabgroup))){
+    showToast("{You_must_save_this_tabgroup_first}");
+    return;
+  }
+  parentTabgroup = tabgroup;
+  newCapture();
 }
 
-onShowTabgroup () {
-  // TODO: Add some things which should happen when this tabgroup is shown
-  saveTabGroup("Tabgroup");
-}
-
-addOnEvent("Tabgroup", "show", "onShowTabgroup()");
+addOnEvent("User/User/Login", "click", "onClickUserLogin()");
+addOnEvent("Control/Main/Record_New_Site", "click", "onClickControlRecordNewSite()");
+addOnEvent("Site/Site/Record_New_Turtle", "click", "onClickSiteRecordNewTurtle()");
+addOnEvent("Turtle/Turtle/Record_New_Capture", "click", "onClickTurtleRecordNewCapture()");
 
 
-
+/******************************************************************************/
+/*                   AUDIO, CAMERA, FILE AND VIDEO BINDINGS                   */
+/******************************************************************************/
+addOnEvent("Turtle/Turtle/Button_Take_Carapace_Marking_photo", "click", "attachPictureTo(\"Turtle/Turtle/Take_Carapace_Marking_photo\")");
+addOnEvent("Capture/Capture/Button_Take_Carapace_photo", "click", "attachPictureTo(\"Capture/Capture/Take_Carapace_photo\")");
+addOnEvent("Capture/Capture/Button_Take_Plastrum_photo", "click", "attachPictureTo(\"Capture/Capture/Take_Plastrum_photo\")");
 
 /******************************************************************************/
 /*                             NAVIGATION DRAWER                              */
@@ -591,6 +714,8 @@ removeNavigationButtons() {
 addNavigationButtons(String tabgroup) {
   removeNavigationButtons();
   List tabgroupsToValidate = new ArrayList();
+  tabgroupsToValidate.add("Site");
+  tabgroupsToValidate.add("Turtle");
 
   addNavigationButton("new", new ActionButtonCallback() {
     actionOnLabel() {
@@ -783,17 +908,17 @@ loadEntityFrom(String entityID) {
   });
 }
 
-newTabgroup(){
-  String tabgroup = "Tabgroup";
+newSite(){
+  String tabgroup = "Site";
 
 
   setUuid(tabgroup, null);
   newTabGroup(tabgroup);
-
+  populateAuthorAndTimestamp(tabgroup);
 }
 
-duplicateTabgroup(){
-  String tabgroup = "Tabgroup";
+duplicateSite(){
+  String tabgroup = "Site";
   String uuidOld = getUuid(tabgroup);
 
   disableAutoSave(tabgroup);
@@ -835,18 +960,160 @@ duplicateTabgroup(){
   });
 }
 
-deleteTabgroup(){
-  String tabgroup = "Tabgroup";
+deleteSite(){
+  String tabgroup = "Site";
 
   if (isNull(getUuid(tabgroup))) {
     cancelTabGroup(tabgroup, true);
   } else {
-    showAlert("{Confirm_Deletion}", "{Press_OK_to_Delete_this_Record}", "reallyDeleteTabgroup()", "doNotDelete()");
+    showAlert("{Confirm_Deletion}", "{Press_OK_to_Delete_this_Record}", "reallyDeleteSite()", "doNotDelete()");
   }
 }
 
-reallyDeleteTabgroup(){
-  String tabgroup = "Tabgroup";
+reallyDeleteSite(){
+  String tabgroup = "Site";
+  deleteArchEnt(getUuid(tabgroup));
+  cancelTabGroup(tabgroup, false);
+}
+
+newTurtle(){
+  String tabgroup = "Turtle";
+
+
+  setUuid(tabgroup, null);
+  newTabGroup(tabgroup);
+  populateAuthorAndTimestamp(tabgroup);
+}
+
+duplicateTurtle(){
+  String tabgroup = "Turtle";
+  String uuidOld = getUuid(tabgroup);
+
+  disableAutoSave(tabgroup);
+
+
+  populateCameraPictureGallery("Turtle/Turtle/Take_Carapace_Marking_photo", new ArrayList());
+
+
+  saveCallback = new SaveCallback() {
+    onSave(uuid, newRecord) {
+      setUuid(tabgroup, uuid);
+      populateAuthorAndTimestamp(tabgroup);
+
+      Boolean enable_autosave = true;
+
+      fetchAll(getDuplicateRelnQuery(uuidOld), new FetchCallback(){
+        onFetch(result) {
+          Log.e("Module", result.toString());
+          makeDuplicateRelationships(result, getUuid(tabgroup));
+          showToast("{Duplicated_record}");
+          dialog.dismiss();
+        }
+      });
+
+      saveTabGroup(tabgroup, getUuid(tabgroup), null, null, new SaveCallback(){
+        onSave(autosaveUuid, autosaveNewRecord) {
+          setUuid(tabgroup, autosaveUuid);
+        }
+      }, enable_autosave);
+    }
+  };
+
+  String extraDupeAttributes = "";
+  fetchAll(getDuplicateAttributeQuery(getUuid(tabgroup), extraDupeAttributes), new FetchCallback(){
+    onFetch(result) {
+      excludeAttributes = new ArrayList();
+      excludeAttributes.add("Take Carapace Marking photo");
+
+      duplicateTabGroup(tabgroup, null, getExtraAttributes(result), excludeAttributes, saveCallback);
+    }
+  });
+}
+
+deleteTurtle(){
+  String tabgroup = "Turtle";
+
+  if (isNull(getUuid(tabgroup))) {
+    cancelTabGroup(tabgroup, true);
+  } else {
+    showAlert("{Confirm_Deletion}", "{Press_OK_to_Delete_this_Record}", "reallyDeleteTurtle()", "doNotDelete()");
+  }
+}
+
+reallyDeleteTurtle(){
+  String tabgroup = "Turtle";
+  deleteArchEnt(getUuid(tabgroup));
+  cancelTabGroup(tabgroup, false);
+}
+
+newCapture(){
+  String tabgroup = "Capture";
+
+
+  setUuid(tabgroup, null);
+  newTabGroup(tabgroup);
+  populateAuthorAndTimestamp(tabgroup);
+}
+
+duplicateCapture(){
+  String tabgroup = "Capture";
+  String uuidOld = getUuid(tabgroup);
+
+  disableAutoSave(tabgroup);
+
+
+  populateCameraPictureGallery("Capture/Capture/Take_Carapace_photo", new ArrayList());
+  populateCameraPictureGallery("Capture/Capture/Take_Plastrum_photo", new ArrayList());
+
+
+  saveCallback = new SaveCallback() {
+    onSave(uuid, newRecord) {
+      setUuid(tabgroup, uuid);
+      populateAuthorAndTimestamp(tabgroup);
+
+      Boolean enable_autosave = true;
+
+      fetchAll(getDuplicateRelnQuery(uuidOld), new FetchCallback(){
+        onFetch(result) {
+          Log.e("Module", result.toString());
+          makeDuplicateRelationships(result, getUuid(tabgroup));
+          showToast("{Duplicated_record}");
+          dialog.dismiss();
+        }
+      });
+
+      saveTabGroup(tabgroup, getUuid(tabgroup), null, null, new SaveCallback(){
+        onSave(autosaveUuid, autosaveNewRecord) {
+          setUuid(tabgroup, autosaveUuid);
+        }
+      }, enable_autosave);
+    }
+  };
+
+  String extraDupeAttributes = "";
+  fetchAll(getDuplicateAttributeQuery(getUuid(tabgroup), extraDupeAttributes), new FetchCallback(){
+    onFetch(result) {
+      excludeAttributes = new ArrayList();
+      excludeAttributes.add("Take Carapace photo");
+      excludeAttributes.add("Take Plastrum photo");
+
+      duplicateTabGroup(tabgroup, null, getExtraAttributes(result), excludeAttributes, saveCallback);
+    }
+  });
+}
+
+deleteCapture(){
+  String tabgroup = "Capture";
+
+  if (isNull(getUuid(tabgroup))) {
+    cancelTabGroup(tabgroup, true);
+  } else {
+    showAlert("{Confirm_Deletion}", "{Press_OK_to_Delete_this_Record}", "reallyDeleteCapture()", "doNotDelete()");
+  }
+}
+
+reallyDeleteCapture(){
+  String tabgroup = "Capture";
   deleteArchEnt(getUuid(tabgroup));
   cancelTabGroup(tabgroup, false);
 }
@@ -855,7 +1122,261 @@ reallyDeleteTabgroup(){
 doNotDelete(){
   showToast("{Delete_Cancelled}");
 }
-addOnEvent("Tabgroup", "show", "addNavigationButtons(\"Tabgroup\")");
+addOnEvent("User", "show", "removeNavigationButtons()");
+addOnEvent("Control", "show", "removeNavigationButtons()");
+addOnEvent("Site", "show", "addNavigationButtons(\"Site\")");
+addOnEvent("Turtle", "show", "addNavigationButtons(\"Turtle\")");
+addOnEvent("Capture", "show", "addNavigationButtons(\"Capture\")");
+
+/******************************************************************************/
+/*                                   SEARCH                                   */
+/******************************************************************************/
+addOnEvent("Control/Search"               , "show"  , "search();");
+addOnEvent("Control/Search/Entity_List"   , "click" , "loadEntity();");
+addOnEvent("Control/Search/Search_Button" , "click" , "search()");
+addOnEvent("Control/Search/Search_Term"   , "click" , "clearSearch()");
+addOnEvent("Control/Search/Entity_Types"  , "click" , "search()");
+
+entityTypes = new ArrayList();
+entityTypes.add(new NameValuePair("{All}", ""));
+entityTypes.add(new NameValuePair("{Site}", "Site"));
+entityTypes.add(new NameValuePair("{Turtle}", "Turtle"));
+entityTypes.add(new NameValuePair("{Capture}", "Capture"));
+populateDropDown("Control/Search/Entity_Types", entityTypes);
+
+clearSearch(){
+  setFieldValue("Control/Search/Search_Term","");
+}
+
+search(){
+  String tabgroup = "Control";
+  String refEntityList  = tabgroup + "/Search/Entity_List";
+  String refSearchTerm  = tabgroup + "/Search/Search_Term";
+  String refEntityTypes = tabgroup + "/Search/Entity_Types";
+
+  String type = getFieldValue(refEntityTypes);
+  String term = getFieldValue(refSearchTerm);
+  String searchQuery = "SELECT uuid, response "+
+                       "  FROM latestNonDeletedArchEntFormattedIdentifiers  "+
+                       " WHERE uuid in (SELECT uuid "+
+                       "                  FROM latestNonDeletedArchEntIdentifiers "+
+                       "                 WHERE measure LIKE '"+term+"'||'%'  "+
+                       "                   AND ( aenttypename LIKE '"+type+"' OR '' = '"+type+"' ) "+
+                       "                )  "+
+                       " ORDER BY response "+
+                       " LIMIT ? "+
+                       "OFFSET ? ";
+
+  populateCursorList(refEntityList, searchQuery, 25);
+  refreshTabgroupCSS(tabgroup);
+
+  Log.d("Module", "Search query: " + searchQuery);
+}
+
+loadSiteFrom(String uuid) {
+  String tabgroup = "Site";
+  setUuid(tabgroup, uuid);
+  if (isNull(uuid)) return;
+
+  showTabGroup(tabgroup, uuid);
+}
+
+loadTurtleFrom(String uuid) {
+  String tabgroup = "Turtle";
+  setUuid(tabgroup, uuid);
+  if (isNull(uuid)) return;
+
+  showTabGroup(tabgroup, uuid);
+}
+
+loadCaptureFrom(String uuid) {
+  String tabgroup = "Capture";
+  setUuid(tabgroup, uuid);
+  if (isNull(uuid)) return;
+
+  showTabGroup(tabgroup, uuid);
+}
+
+
+/******************************************************************************/
+/*                          TAKE FROM GPS BUTTON(S)                           */
+/******************************************************************************/
+addOnEvent("Site/Site/Take_From_GPS", "click", "takePoint(\"Site\")");
+addOnEvent("Capture/Capture/Take_From_GPS", "click", "takePoint(\"Capture\")");
+
+/* Takes the current point using gps. */
+takePoint(String tabgroup) {
+  Map tabgroupToTabRef = new HashMap();
+  tabgroupToTabRef.put("Site", "Site/Site/");
+  tabgroupToTabRef.put("Capture", "Capture/Capture/");
+
+  String archEntType = tabgroup.replaceAll("_", " ");
+  String currentUuid = getUuid(tabgroup);
+  if (isNull(currentUuid)){
+    showToast("Please enter data first and let a save occur.");
+    return;
+  }
+
+  Object position = getGPSPosition();
+  if (position == null) {
+    showToast("{GPS_Not_Initialised}");
+    return;
+  }
+
+  Object projPosition = getGPSPositionProjected();
+  Double latitude     = position.getLatitude();
+  Double longitude    = position.getLongitude();
+  Double northing     = projPosition.getLatitude();
+  Double easting      = projPosition.getLongitude();
+
+  samplePoint = new Point(new MapPos(easting, northing), null, (PointStyle) null, null);
+  ArrayList geolist = new ArrayList();
+  geolist.add(samplePoint);
+
+  String accuracy = "Accuracy: " + getGPSEstimatedAccuracy();
+  setFieldAnnotation(tabgroupToTabRef.get(tabgroup) + "Latitude", accuracy);
+
+  saveArchEnt(currentUuid, archEntType, geolist, null, new SaveCallback() {
+    onSave(uuid, newRecord) {
+      print("[takePoint()] Added geometry: " + geolist);
+      fillInGPS(tabgroup);
+    }
+  });
+}
+
+/* Sets the value of GPS views for the given tab path. */
+fillInGPS(String tabgroup) {
+  Map tabgroupToTabRef = new HashMap();
+  tabgroupToTabRef.put("Site", "Site/Site/");
+  tabgroupToTabRef.put("Capture", "Capture/Capture/");
+
+  String currentUuid = getUuid(tabgroup);
+  if (isNull(currentUuid)) {
+    return;
+  }
+
+  String query = "SELECT x(transform(geospatialcolumn,                4326)) as longtiude, " +
+                 "       y(transform(geospatialcolumn,                4326)) as latitude, " +
+                 "       x(transform(geospatialcolumn, "+getModuleSrid()+")) as easting, " +
+                 "       y(transform(geospatialcolumn, "+getModuleSrid()+")) as northing " +
+                 "  FROM latestnondeletedarchent, vocabulary " +
+                 " WHERE uuid = '" + currentUuid + "';";
+
+  fetchOne(query, new FetchCallback() {
+    onFetch(result) {
+      print("[fillInGPS()] Fetched DB transformed geometry: " + result);
+      setFieldValue(tabgroupToTabRef.get(tabgroup) + "Longitude" , result.get(0));
+      setFieldValue(tabgroupToTabRef.get(tabgroup) + "Latitude"  , result.get(1));
+      setFieldValue(tabgroupToTabRef.get(tabgroup) + "Easting"   , result.get(2));
+      setFieldValue(tabgroupToTabRef.get(tabgroup) + "Northing"  , result.get(3));
+    }
+  });
+}
+
+/******************************************************************************/
+/*                POPULATION OF ENTITY AND CHILD ENTITY LISTS                 */
+/******************************************************************************/
+/*
+ * `viewType`   the type of GUI element to be populated. It can either equal
+ *              "DropDown" or "List".
+ * `path`       the reference of the GUI element to be populated.
+ * `parentUuid` the parent in the relationship denoted by `relType`.
+ * `entType`    the type of the entities the menu will be populated with.
+ * `relType`    the name of the relationship the children are to be in with the
+ *              entity denoted by `parentUuid`.
+ */
+populateMenuWithEntities (
+  String viewType,
+  String path,
+  String parentUuid,
+  String entType,
+  String relType
+) {
+  String getChildEntitiesQ = "" +
+    "SELECT childuuid, response "+
+    "  FROM parentchild JOIN latestNonDeletedArchEntFormattedIdentifiers ON (childuuid = uuid) " +
+    "  JOIN createdmodifiedatby USING (uuid) " +
+    " WHERE relationshipid IN (SELECT relationshipid  " +
+    "                            FROM latestnondeletedrelationship JOIN relntype USING (relntypeid) " +
+    "                           WHERE relntypename = '"+relType+"') " +
+    "   AND parentuuid = " + parentUuid + " " +
+    "   AND (childaenttypename = '"+entType+"' OR '"+entType+"' = '') " +
+    " ORDER BY createdat DESC ";
+
+  String getEntitiesQ = "" +
+    "SELECT uuid, response "+
+    "  FROM latestNonDeletedArchEntFormattedIdentifiers  "+
+    " WHERE uuid in (SELECT uuid "+
+    "                  FROM latestNonDeletedArchEntIdentifiers "+
+    "                 WHERE aenttypename = '"+entType+"' OR '"+entType+"' = '' " +
+    "               )  "+
+    " ORDER BY response ";
+
+  String q = null;
+  if (relType.equals("")) {
+    q = getEntitiesQ;
+  } else {
+    q = getChildEntitiesQ;
+  }
+
+  FetchCallback cbPopulateDropDown = new FetchCallback() {
+    onFetch(result) {
+      populateDropDown(path, result, true);
+    }
+  };
+
+  switch (viewType) {
+    case "DropDown":
+      fetchAll(q, cbPopulateDropDown);
+      break;
+    case "List":
+      q += " LIMIT ? OFFSET ? ";
+      populateCursorList(path, q, 25);
+      break;
+    default:
+      Log.e("populateMenuWithEntities ", "Unexpected type '" + viewType + "'");
+  }
+}
+
+menus = new ArrayList();
+menus.add(new String[] {
+  "List",
+  "Site/Site/List_of_site_turtles",
+  "getUuid(\"Site\")",
+  "Turtle",
+  "Site - Turtle",
+});
+menus.add(new String[] {
+  "List",
+  "Turtle/Turtle/List_of_Turtle_Captures",
+  "getUuid(\"Turtle\")",
+  "Capture",
+  "Turtle - Capture",
+});
+for (m : menus) {
+  String viewType       = m[0];
+  String path           = m[1];
+  String parentUuidCall = m[2];
+  String entType        = m[3];
+  String relType        = m[4];
+
+  String functionCall = "";
+  functionCall += "populateMenuWithEntities(";
+  functionCall += "\"" + viewType       + "\"";
+  functionCall += ", ";
+  functionCall += "\"" + path           + "\"";
+  functionCall += ", ";
+  functionCall +=        parentUuidCall       ;
+  functionCall += ", ";
+  functionCall += "\"" + entType        + "\"";
+  functionCall += ", ";
+  functionCall += "\"" + relType        + "\"";
+  functionCall += ")";
+
+  addOnEvent(path, "show", functionCall);
+}
+addOnEvent("Site/Site/List_of_site_turtles", "click", "loadEntity()");
+addOnEvent("Turtle/Turtle/List_of_Turtle_Captures", "click", "loadEntity()");
 
 /******************************************************************************/
 /*                                    INIT                                    */

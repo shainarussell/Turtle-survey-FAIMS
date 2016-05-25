@@ -16,15 +16,88 @@
               <layout_weight/>
             </large>
           </style>
-          <Tabgroup>
-            <Tab>
-              <Dummy/>
-              <Dropdown/>
-              <List/>
-              <Picture/>
-              <Radio/>
-            </Tab>
-          </Tabgroup>
+          <User>
+            <User>
+              <Select_User/>
+              <Login/>
+            </User>
+          </User>
+          <Control>
+            <Main>
+              <Record_New_Site/>
+              <GPS_Diagnostics/>
+            </Main>
+            <Search>
+              <Colgroup_0>
+                <Col_0>
+                  <Search_Term/>
+                </Col_0>
+                <Col_1>
+                  <Search_Button/>
+                </Col_1>
+              </Colgroup_0>
+              <Entity_Types/>
+              <Entity_List/>
+            </Search>
+          </Control>
+          <Site>
+            <Site>
+              <Title/>
+              <Colgroup_GPS>
+                <Col_0>
+                  <Latitude/>
+                  <Northing/>
+                </Col_0>
+                <Col_1>
+                  <Longitude/>
+                  <Easting/>
+                </Col_1>
+              </Colgroup_GPS>
+              <Take_From_GPS/>
+              <Radius_of_Site/>
+              <Record_New_Turtle/>
+              <List_of_site_turtles/>
+            </Site>
+          </Site>
+          <Turtle>
+            <Turtle>
+              <Turtle_Markings/>
+              <Did_you_give_turtle_a_marking/>
+              <Take_Carapace_Marking_photo/>
+              <Button_Take_Carapace_Marking_photo/>
+              <Record_New_Capture/>
+              <List_of_Turtle_Captures/>
+            </Turtle>
+            <Measurement>
+              <Species/>
+              <Turtle_measurement_Carapace_Length/>
+              <Turtle_measurement_Carapace_Width/>
+              <Turtle_measurement_Plastron_Length/>
+              <Turtle_measurement_Plastron_Width/>
+              <Turtle_sex/>
+            </Measurement>
+          </Turtle>
+          <Capture>
+            <Capture>
+              <timestamp/>
+              <Colgroup_GPS>
+                <Col_0>
+                  <Latitude/>
+                  <Northing/>
+                </Col_0>
+                <Col_1>
+                  <Longitude/>
+                  <Easting/>
+                </Col_1>
+              </Colgroup_GPS>
+              <Take_From_GPS/>
+              <Trapping_Method/>
+              <Take_Carapace_photo/>
+              <Button_Take_Carapace_photo/>
+              <Take_Plastrum_photo/>
+              <Button_Take_Plastrum_photo/>
+            </Capture>
+          </Capture>
         </faims>
       </instance>
     </model>
@@ -51,41 +124,246 @@
         </input>
       </group>
     </group>
-    <group ref="Tabgroup" faims_archent_type="Tabgroup">
-      <label>{Tabgroup}</label>
-      <group ref="Tab">
-        <label>{Tab}</label>
-        <input faims_attribute_type="measure" ref="Dummy" faims_attribute_name="Dummy">
-          <label>{Dummy}</label>
+    <group ref="User">
+      <label>{User}</label>
+      <group ref="User">
+        <label>{User}</label>
+        <select1 ref="Select_User">
+          <label>{Select_User}</label>
+          <item>
+            <label>Options not loaded</label>
+            <value>0</value>
+          </item>
+        </select1>
+        <trigger ref="Login">
+          <label>{Login}</label>
+        </trigger>
+      </group>
+    </group>
+    <group ref="Control">
+      <label>{Control}</label>
+      <group ref="Main">
+        <label>{Main}</label>
+        <trigger ref="Record_New_Site">
+          <label>{Record_New_Site}</label>
+        </trigger>
+        <input faims_read_only="true" ref="GPS_Diagnostics">
+          <label>{GPS_Diagnostics}</label>
         </input>
-        <select1 faims_attribute_type="vocab" ref="Dropdown" faims_attribute_name="Dropdown">
-          <label>{Dropdown}</label>
+      </group>
+      <group ref="Search" faims_scrollable="false">
+        <label>{Records}</label>
+        <group faims_style="orientation" ref="Colgroup_0">
+          <label/>
+          <group faims_style="even" ref="Col_0">
+            <label/>
+            <input ref="Search_Term">
+              <label>{Search_Term}</label>
+            </input>
+          </group>
+          <group faims_style="large" ref="Col_1">
+            <label/>
+            <trigger ref="Search_Button">
+              <label>{Search}</label>
+            </trigger>
+          </group>
+        </group>
+        <select1 ref="Entity_Types">
+          <label>{Entity_Types}</label>
+          <item>
+            <label>Options not loaded</label>
+            <value>Options not loaded</value>
+          </item>
+        </select1>
+        <select1 appearance="compact" ref="Entity_List">
+          <label>{Entity_List}</label>
+          <item>
+            <label>Options not loaded</label>
+            <value>Options not loaded</value>
+          </item>
+        </select1>
+      </group>
+    </group>
+    <group ref="Site" faims_archent_type="Site">
+      <label>{Site}</label>
+      <group ref="Site">
+        <label>{Site}</label>
+        <input faims_attribute_type="measure" ref="Title" faims_attribute_name="Title" faims_style_class="required">
+          <label>{Title}</label>
+          <!--WARNING: No type t was given for this view; assuming it is an input-->
+        </input>
+        <group ref="Colgroup_GPS" faims_style="orientation">
+          <label/>
+          <group ref="Col_0" faims_style="even">
+            <label/>
+            <input ref="Latitude" faims_attribute_name="Latitude" faims_attribute_type="measure" faims_read_only="true">
+              <label>{Latitude}</label>
+            </input>
+            <input ref="Northing" faims_attribute_name="Northing" faims_attribute_type="measure" faims_read_only="true">
+              <label>{Northing}</label>
+            </input>
+          </group>
+          <group ref="Col_1" faims_style="even">
+            <label/>
+            <input ref="Longitude" faims_attribute_name="Longitude" faims_attribute_type="measure" faims_read_only="true">
+              <label>{Longitude}</label>
+            </input>
+            <input ref="Easting" faims_attribute_name="Easting" faims_attribute_type="measure" faims_read_only="true">
+              <label>{Easting}</label>
+            </input>
+          </group>
+        </group>
+        <trigger ref="Take_From_GPS">
+          <label>{Take_From_GPS}</label>
+        </trigger>
+        <input faims_attribute_type="measure" ref="Radius_of_Site" faims_attribute_name="Radius of Site">
+          <label>{Radius_of_Site}</label>
+          <!--WARNING: No type t was given for this view; assuming it is an input-->
+        </input>
+        <trigger ref="Record_New_Turtle">
+          <label>{Record_New_Turtle}</label>
+        </trigger>
+        <select1 appearance="compact" ref="List_of_site_turtles" faims_annotation="false" faims_certainty="false">
+          <label>{List_of_site_turtles}</label>
           <item>
             <label>Options not loaded</label>
             <value>0</value>
           </item>
         </select1>
-        <select1 appearance="compact" ref="List" faims_attribute_name="List">
-          <label>{List}</label>
+      </group>
+    </group>
+    <group ref="Turtle" faims_archent_type="Turtle">
+      <label>{Turtle}</label>
+      <group ref="Turtle">
+        <label>{Turtle}</label>
+        <input faims_attribute_type="measure" ref="Turtle_Markings" faims_attribute_name="Turtle Markings" faims_style_class="required">
+          <label>{Turtle_Markings}</label>
+          <!--WARNING: No type t was given for this view; assuming it is an input-->
+        </input>
+        <select1 appearance="full" faims_attribute_type="vocab" ref="Did_you_give_turtle_a_marking" faims_attribute_name="Did you give turtle a marking">
+          <label>{Did_you_give_turtle_a_marking}</label>
           <item>
             <label>Options not loaded</label>
             <value>0</value>
           </item>
         </select1>
-        <select1 type="image" faims_attribute_type="vocab" ref="Picture" faims_attribute_name="Picture">
-          <label>{Picture}</label>
+        <select type="camera" faims_attribute_type="measure" faims_sync="true" ref="Take_Carapace_Marking_photo" faims_attribute_name="Take Carapace Marking photo">
+          <label>{Take_Carapace_Marking_photo}</label>
+          <item>
+            <label>Options not loaded</label>
+            <value>0</value>
+          </item>
+        </select>
+        <trigger ref="Button_Take_Carapace_Marking_photo">
+          <label>{Button_Take_Carapace_Marking_photo}</label>
+        </trigger>
+        <trigger ref="Record_New_Capture">
+          <label>{Record_New_Capture}</label>
+        </trigger>
+        <select1 appearance="compact" ref="List_of_Turtle_Captures" faims_annotation="false" faims_certainty="false">
+          <label>{List_of_Turtle_Captures}</label>
           <item>
             <label>Options not loaded</label>
             <value>0</value>
           </item>
         </select1>
-        <select1 appearance="full" faims_attribute_type="vocab" ref="Radio" faims_attribute_name="Radio">
-          <label>{Radio}</label>
+      </group>
+      <group ref="Measurement">
+        <label>{Measurement}</label>
+        <select1 faims_attribute_type="vocab" ref="Species" faims_attribute_name="Species">
+          <label>{Species}</label>
+          <!--WARNING: No type t was given for this view; assuming it is a dropdown-->
           <item>
             <label>Options not loaded</label>
             <value>0</value>
           </item>
         </select1>
+        <input faims_attribute_type="measure" ref="Turtle_measurement_Carapace_Length" faims_attribute_name="Turtle measurement Carapace Length">
+          <label>{Turtle_measurement_Carapace_Length}</label>
+          <!--WARNING: No type t was given for this view; assuming it is an input-->
+        </input>
+        <input faims_attribute_type="measure" ref="Turtle_measurement_Carapace_Width" faims_attribute_name="Turtle measurement Carapace Width">
+          <label>{Turtle_measurement_Carapace_Width}</label>
+          <!--WARNING: No type t was given for this view; assuming it is an input-->
+        </input>
+        <input faims_attribute_type="measure" ref="Turtle_measurement_Plastron_Length" faims_attribute_name="Turtle measurement Plastron Length">
+          <label>{Turtle_measurement_Plastron_Length}</label>
+          <!--WARNING: No type t was given for this view; assuming it is an input-->
+        </input>
+        <input faims_attribute_type="measure" ref="Turtle_measurement_Plastron_Width" faims_attribute_name="Turtle measurement Plastron Width">
+          <label>{Turtle_measurement_Plastron_Width}</label>
+          <!--WARNING: No type t was given for this view; assuming it is an input-->
+        </input>
+        <select1 faims_attribute_type="vocab" ref="Turtle_sex" faims_attribute_name="Turtle sex">
+          <label>{Turtle_sex}</label>
+          <!--WARNING: No type t was given for this view; assuming it is a dropdown-->
+          <item>
+            <label>Options not loaded</label>
+            <value>0</value>
+          </item>
+        </select1>
+      </group>
+    </group>
+    <group ref="Capture" faims_archent_type="Capture">
+      <label>{Capture}</label>
+      <group ref="Capture">
+        <label>{Capture}</label>
+        <input ref="timestamp" faims_attribute_name="timestamp" faims_attribute_type="measure" faims_read_only="true" faims_annotation="false" faims_certainty="false">
+          <label>{timestamp}</label>
+          <!--WARNING: Flags ignored-->
+        </input>
+        <group ref="Colgroup_GPS" faims_style="orientation">
+          <label/>
+          <group ref="Col_0" faims_style="even">
+            <label/>
+            <input ref="Latitude" faims_attribute_name="Latitude" faims_attribute_type="measure" faims_read_only="true">
+              <label>{Latitude}</label>
+            </input>
+            <input ref="Northing" faims_attribute_name="Northing" faims_attribute_type="measure" faims_read_only="true">
+              <label>{Northing}</label>
+            </input>
+          </group>
+          <group ref="Col_1" faims_style="even">
+            <label/>
+            <input ref="Longitude" faims_attribute_name="Longitude" faims_attribute_type="measure" faims_read_only="true">
+              <label>{Longitude}</label>
+            </input>
+            <input ref="Easting" faims_attribute_name="Easting" faims_attribute_type="measure" faims_read_only="true">
+              <label>{Easting}</label>
+            </input>
+          </group>
+        </group>
+        <trigger ref="Take_From_GPS">
+          <label>{Take_From_GPS}</label>
+        </trigger>
+        <select1 faims_attribute_type="vocab" ref="Trapping_Method" faims_attribute_name="Trapping Method">
+          <label>{Trapping_Method}</label>
+          <!--WARNING: No type t was given for this view; assuming it is a dropdown-->
+          <item>
+            <label>Options not loaded</label>
+            <value>0</value>
+          </item>
+        </select1>
+        <select type="camera" faims_attribute_type="measure" faims_sync="true" ref="Take_Carapace_photo" faims_attribute_name="Take Carapace photo">
+          <label>{Take_Carapace_photo}</label>
+          <item>
+            <label>Options not loaded</label>
+            <value>0</value>
+          </item>
+        </select>
+        <trigger ref="Button_Take_Carapace_photo">
+          <label>{Button_Take_Carapace_photo}</label>
+        </trigger>
+        <select type="camera" faims_attribute_type="measure" faims_sync="true" ref="Take_Plastrum_photo" faims_attribute_name="Take Plastrum photo">
+          <label>{Take_Plastrum_photo}</label>
+          <item>
+            <label>Options not loaded</label>
+            <value>0</value>
+          </item>
+        </select>
+        <trigger ref="Button_Take_Plastrum_photo">
+          <label>{Button_Take_Plastrum_photo}</label>
+        </trigger>
       </group>
     </group>
   </h:body>
